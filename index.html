@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shared Expense Tracker/home</title>
+  <title>Shared Expense Tracker/input</title>
   <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code&display=swap" rel="stylesheet">
   <link rel="stylesheet" type="text/css" href="stylesheet.css">
@@ -19,8 +19,8 @@
   <header>
       <span class="fa fa-bars menu-icon"></span>
       <div class="header-right">
-        <a href="index.html">home</a>
-        <a href="bio.html">bio</a>
+        <a href="index.html">input</a>
+        <a href="bio.html">output</a>
         <a href="gallery.html">gallery</a>
       </div>
   </header>
@@ -32,10 +32,133 @@
         <span style="color: #f2b2d9; text-shadow: 0 0 1px #000, 0 0 2px #000; "font-family: 'Great Vibes', cursive;"><i>Shared Expense Tracker</i></span>
       </h1>
       
+  <style>
+    :root {
+      --bg: #f7f7f7;
+      --text: #000;
+      --card: #fff;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1e1e1e;
+        --text: #f0f0f0;
+        --card: #2a2a2a;
+      }
+    }
+    body {
+      font-family: sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 1em;
+      max-width: 600px;
+      margin: auto;
+    }
+    input, button, select {
+      padding: 0.5em;
+      margin: 0.3em 0;
+      width: 100%;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      background-color: var(--card);
+      color: var(--text);
+    }
+    label {
+      display: block;
+      margin-top: 0.5em;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h2>Shared Expense Tracker - Input</h2>
+  <label>Currency:
+    <select id="currency">
+      <option value="¥">¥ (JPY)</option>
+      <option value="$">$ (USD)</option>
+      <option value="€">€ (EUR)</option>
+    </select>
+  </label>
+  <label>Payer:
+    <select id="payer">
+      <option value="K">K</option>
+      <option value="C">C</option>
+    </select>
+  </label>
+  <label>Paid for:
+    <select id="included">
+      <option value="K">K</option>
+      <option value="C">C</option>
+      <option value="K,C">K & C</option>
+    </select>
+  </label>
+  <label>Amount:
+    <input type="number" id="amount" />
+  </label>
+  <label>Note:
+    <input type="text" id="note" />
+  </label>
+  <button onclick="addExpense()">Add</button>
+  <button onclick="exportCSV()">Export CSV</button>
+  <br><br>
+  <a href="view.html">Go to History & Chart</a>
+
+  <script>
+    const payerInput = document.getElementById("payer");
+    const includedInput = document.getElementById("included");
+    const amountInput = document.getElementById("amount");
+    const noteInput = document.getElementById("note");
+    const currencyInput = document.getElementById("currency");
+
+    function addExpense() {
+      const payer = payerInput.value;
+      const included = includedInput.value.split(',');
+      const amount = Number(amountInput.value);
+      const note = noteInput.value.trim();
+      const currency = currencyInput.value;
+
+      if (!payer || included.length === 0 || !amount) {
+        alert("Please fill in all fields correctly.");
+        return;
+      }
+
+      const expenses = JSON.parse(localStorage.getItem("shared_expenses") || "[]");
+      expenses.push({ payer, included, amount, note, cleared: false });
+      localStorage.setItem("shared_expenses", JSON.stringify(expenses));
+
+      amountInput.value = "";
+      noteInput.value = "";
+    }
+
+    function exportCSV() {
+      const rows = [["Payer", "Included", "Amount", "Note", "Cleared"]];
+      const expenses = JSON.parse(localStorage.getItem("shared_expenses") || "[]");
+      expenses.forEach(exp => {
+        rows.push([exp.payer, exp.included.join("/"), exp.amount, exp.note, exp.cleared ? "Yes" : "No"]);
+      });
+      const csvContent = rows.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "expenses.csv");
+      link.click();
+    }
+  </script>
+
+
+
+  
  <h2>
    <a href="#contact" 
       class="contact-button"
-      style="color: #dec1f6; font-size: 18px; text-shadow: 0 0 1px #000, 0 0 2px #000;"> Reach me here🕊️
+      style="color: #dec1f6; font-size: 18px; text-shadow: 0 0 1px #000, 0 0 2px #000;"> Go to History & Chart🕊️
    </a>
 </h2>
       
