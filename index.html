@@ -19,19 +19,17 @@
       <span class="fa fa-bars menu-icon"></span>
       <div class="header-right">
         <a href="index.html">input</a>
-        <a href=".html">output</a>
-        <a href="gallery.html">gallery</a>
+        <a href="view.html">output</a>
       </div>
   </header>
-
   
   <div class="top-wrapper">
     <div class="container">
-      <h1><span style="text-shadow: 0 0 1px #000, 0 0 2px #000; font-style: italic; font-family: 'Dancing Script', cursive !important;">
+      <h1><span style="color: white; text-shadow: 0 0 1px #000, 0 0 2px #000; font-style: italic; font-family: 'Dancing Script', cursive !important;">
         Shared Expense Tracker</span>
       </h1>
 
- <style>Add commentMore actions
+  <style>
     :root {
       --bg: #f7f7f7;
       --text: #000;
@@ -75,7 +73,10 @@
     }
   </style>
 </head>
+
+
 <body>
+<div class="contact-card" id="contact">
 
   <label>Currency:
     <select id="currency">
@@ -106,6 +107,8 @@
   <button onclick="addExpense()">Add</button>
   <button onclick="exportCSV()">Export CSV</button>
   <br><br>
+  
+  </div>
 
    <h2>
    <a href="view.html"
@@ -156,34 +159,11 @@
       link.click();
     }
   </script>
-
-      
-  <footer>
-    <div class="contact-card" id="contact">
-    <span style="color: #eedafc; font-size: 15px; text-shadow: 0 0 1px #000, 0 0 2px #000;">
-    <p>👩‍💻 Chise Ishii / 石井 千星</p>
-    <p>📧<a href="mailto:chiseblanton125@keio.jp">chiseblanton125@keio.jp</a></p>
-    <p>🏛 Keio University Graduate School of Science and Technology</p>
-    <p>📍 Based in Tokyo, Japan<br>   (Minkowski space ⇨ Euclidean / Hilbert space)</p>
-    </span>
-  </div>
-    
-  <div class="footer-bg">
-    <ul class="footer-sns">
-        <li><a href=#><img src="Instagram_Glyph_White.png" alt="instagram"></a></li>
-        <li><a href=#><img src="logo-white.png" alt="x"></a></li>
-        <li><a href=#><img src="Facebook_Logo_Secondary.png" alt="facebook"></a></li>
-        <li><a href=#><img src="InBug-White.png" alt="linkedin"></a></li>
-        <li><a href=#><img src="youtube_white_icon.png" alt="youtube"></a></li>
-        <li><a href=#><img src="github-mark-white.png" alt="github"></a></li>
-        <li><a href=#><img src="icon.png" alt="note"></a></li>
-    </ul>
-  </div>
-    
     
     <div class="container">
       <p> <span font-size=10px !important; style="color: #eedafc; text-shadow: 0 0 1px #000, 0 0 2px #000;">©2025 chise</p>
     </div>
+  
   </footer>
 </body>
 </html>
