@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Expense History</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       font-family: sans-serif;
@@ -36,6 +37,9 @@
     .delete-btn:hover {
       background-color: #c0392b;
     }
+    canvas {
+      margin-top: 2em;
+    }
   </style>
 </head>
 <body>
@@ -51,12 +55,16 @@
   <ul id="debts"></ul>
   <p id="totalDebtSummary"></p>
 
+  <canvas id="barChart" width="400" height="300"></canvas>
+
   <script>
     const history = document.getElementById("history");
     const debts = document.getElementById("debts");
     const totalAmountDisplay = document.getElementById("totalAmount");
     const totalDebtSummary = document.getElementById("totalDebtSummary");
+    const barChartCanvas = document.getElementById("barChart");
     let expenses = JSON.parse(localStorage.getItem("shared_expenses") || "[]");
+    let barChart;
 
     function toggleCleared(index) {
       expenses[index].cleared = !expenses[index].cleared;
@@ -132,6 +140,30 @@
 
       const settleAmount = sumPositive - Math.abs(sumNegative);
       totalDebtSummary.textContent = `Total repayment needed: ¥${settleAmount.toFixed(0)} (= ¥${sumPositive.toFixed(0)} - ¥${Math.abs(sumNegative).toFixed(0)})`;
+
+      if (barChart) barChart.destroy();
+      barChart = new Chart(barChartCanvas, {
+        type: 'bar',
+        data: {
+          labels: ['K', 'C'],
+          datasets: [{
+            label: 'Net Balance (¥)',
+            data: [netDebts['K'], netDebts['C']],
+            backgroundColor: ['#36a2eb', '#ff6384']
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Amount (¥)'
+              }
+            }
+          }
+        }
+      });
     }
 
     render();
