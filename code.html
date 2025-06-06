@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>割り勘支出アプリ</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 1em; max-width: 600px; margin: auto; background: #f7f7f7; }
+    input, button, select { padding: 0.5em; margin: 0.3em 0; width: 100%; border-radius: 5px; border: 1px solid #ccc; }
+    label { display: block; margin-top: 0.5em; }
+    ul { padding: 0; list-style: none; }
+    li { margin: 0.5em 0; border-bottom: 1px solid #ddd; padding-bottom: 0.5em; }
+    canvas { margin-top: 1em; }
+    button { background-color: #4CAF50; color: white; border: none; }
+    button:hover { background-color: #45a049; }
+  </style>
+</head>
+<body>
+  <h2>割り勘支出アプリ</h2>
+
+  <label>支払者:
+    <input type="text" id="payer" placeholder="例: A" />
+  </label>
+  <label>対象者（カンマ区切り）:
+    <input type="text" id="included" placeholder="例: A,B" />
+  </label>
+  <label>金額 (円):
+    <input type="number" id="amount" />
+  </label>
+  <label>メモ:
+    <input type="text" id="note" />
+  </label>
+  <button onclick="addExpense()">追加</button>
+
+  <h3>履歴</h3>
+  <ul id="history"></ul>
+
+  <h3>トータル借金状況</h3>
+  <ul id="debts"></ul>
+  <canvas id="debtChart" width="400" height="300"></canvas>
+  <canvas id="pieChart" width="400" height="300"></canvas>
+
+  <script>
+    const payerInput = document.getElementById("payer");
+    const includedInput = document.getElementById("included");
+    const amountInput = document.getElementById("amount");
+    const noteInput = document.getElementById("note");
+    const history = document.getElementById("history");
+    const debts = document.getElementById("debts");
+    const ctx = document.getElementById("debtChart").getContext("2d");
+    const pieCtx = document.getElementById("pieChart").getContext("2d");
+
+    let expenses = JSON.parse(localStorage.getItem("shared_expenses") || "[]");
+    let barChart, pieChart;
+
+    function addExpense() {
+      const payer = payerInput.value.trim();
+      const included = includedInput.value.split(',').map(name => name.trim()).filter(Boolean);
+      const amount = Number(amountInput.value);
+      const note = noteInput.value.trim();
+
+      if (!payer || included.length === 0 || !amount) {
+        alert("すべての項目を正しく入力してください。");
+        return;
+      }
+
+      expenses.push({ payer, included, amount, note });
+      localStorage.setItem("shared_expenses", JSON.stringify(expenses));
+
+      payerInput.value = "";
+      includedInput.value = "";
+      amountInput.value = "";
+      noteInput.value = "";
+
+      render();
+    }
+
+    function calculateNetDebts() {
+      const debtMap = {};
+      const people = new Set();
+
+      expenses.forEach(exp => {
+        const { payer, included, amount } = exp;
+        const perPerson = amount / included.length;
+        included.forEach(person => people.add(person));
+        people.add(payer);
+
+        included.forEach(person => {
+          if (person !== payer) {
+            const key = `${person}->${payer}`;
+            debtMap[key] = (debtMap[key] || 0) + perPerson;
+          }
+        });
+      });
+
+      const netDebts = {};
+      people.forEach(p => netDebts[p] = 0);
+
+      for (const [key, val] of Object.entries(debtMap)) {
+        const [borrower, lender] = key.split('->');
+        netDebts[borrower] += val;
+        netDebts[lender] -= val;
+      }
+
+      return netDebts;
+    }
+
+    function render() {
+      history.innerHTML = "";
+      expenses.forEach(exp => {
+        const li = document.createElement("li");
+        li.textContent = `${exp.payer} paid ${exp.amount}円 for [${exp.included.join(", ")}]: ${exp.note}`;
+        history.appendChild(li);
+      });
+
+      const netDebts = calculateNetDebts();
+      debts.innerHTML = "";
+      Object.entries(netDebts).forEach(([person, value]) => {
+        const li = document.createElement("li");
+        li.textContent = `${person}: ${value.toFixed(0)}円`;
+        debts.appendChild(li);
+      });
+
+      // 棒グラフ
+      if (barChart) barChart.destroy();
+      barChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: Object.keys(netDebts),
+          datasets: [{
+            label: 'Net Debt (円)',
+            data: Object.values(netDebts),
+            backgroundColor: Object.values(netDebts).map(val => val >= 0 ? 'rgba(255,99,132,0.7)' : 'rgba(75,192,192,0.7)')
+          }]
+        },
+        options: { scales: { y: { beginAtZero: true } } }
+      });
+
+      // 円グラフ（借りている人だけを表示）
+      const debtors = Object.entries(netDebts).filter(([_, v]) => v > 0);
+      if (pieChart) pieChart.destroy();
+      pieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+          labels: debtors.map(([name]) => name),
+          datasets: [{
+            data: debtors.map(([_, value]) => value),
+            backgroundColor: [
+              '#FF6384', '#FFCE56', '#36A2EB', '#8E44AD', '#E67E22', '#2ECC71'
+            ]
+          }]
+        },
+        options: {
+          plugins: {
+            title: {
+              display: true,
+              text: '借金割合 (円)'
+            }
+          }
+        }
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>
