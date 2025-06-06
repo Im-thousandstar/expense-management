@@ -138,9 +138,6 @@
         if (value < 0) sumNegative += value;
       });
 
-      const settleAmount = sumPositive - Math.abs(sumNegative);
-      totalDebtSummary.textContent = `Total repayment needed: ¥${settleAmount.toFixed(0)} (= ¥${sumPositive.toFixed(0)} - ¥${Math.abs(sumNegative).toFixed(0)})`;
-
       if (barChart) barChart.destroy();
       barChart = new Chart(barChartCanvas, {
         type: 'bar',
