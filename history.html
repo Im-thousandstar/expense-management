@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense History & Chart</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f7f7f7;
+      color: #000;
+      padding: 1em;
+      max-width: 700px;
+      margin: auto;
+    }
+    ul {
+      padding: 0;
+      list-style: none;
+    }
+    li {
+      margin: 0.5em 0;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 0.5em;
+    }
+    .checked {
+      text-decoration: line-through;
+      color: #999;
+    }
+    canvas {
+      margin-top: 1em;
+      background-color: #fff;
+      border-radius: 10px;
+    }
+    .delete-btn {
+      background-color: #e74c3c;
+      color: white;
+      border: none;
+      padding: 0.3em 0.6em;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Expense History & Chart</h2>
+  <a href="index.html">← Back to Input</a>
+
+  <h3>Expense History</h3>
+  <ul id="history"></ul>
+
+  <h3>Total Expense: <span id="totalAmount">0</span></h3>
+
+  <h3>Net Balances</h3>
+  <ul id="debts"></ul>
+  <p id="totalDebtSummary"></p>
+  <canvas id="debtChart" width="400" height="300"></canvas>
+
+  <script>
+    const history = document.getElementById("history");
+    const debts = document.getElementById("debts");
+    const totalAmountDisplay = document.getElementById("totalAmount");
+    const totalDebtSummary = document.getElementById("totalDebtSummary");
+    const ctx = document.getElementById("debtChart").getContext("2d");
+    let expenses = JSON.parse(localStorage.getItem("shared_expenses") || "[]");
+    let barChart;
+
+    function render() {
+      history.innerHTML = "";
+      let totalAmount = 0;
+
+      expenses.forEach((exp, idx) => {
+        const li = document.createElement("li");
+        li.className = exp.cleared ? "checked" : "";
+
+        let debtDescription = "";
+        if (exp.included.length === 2) {
+          const other = exp.payer === "K" ? "C" : "K";
+          const debt = (exp.amount / 2).toFixed(0);
+          debtDescription = `${other} owes ${exp.amountCurrency || '¥'}${debt}`;
+        } else if (exp.included[0] !== exp.payer) {
+          const borrower = exp.included[0];
+          const debt = exp.amount.toFixed(0);
+          debtDescription = `${borrower} owes ${exp.amountCurrency || '¥'}${debt}`;
+        }
+
+        li.innerHTML = `
+          <strong>#${idx + 1}</strong><br>
+          ${exp.payer} paid ${exp.amountCurrency || '¥'}${exp.amount} for [${exp.included.join(" & ")}]: ${exp.note}<br>
+          ${debtDescription}<br>
+        `;
+        history.appendChild(li);
+        if (!exp.cleared) totalAmount += exp.amount;
+      });
+
+      totalAmountDisplay.textContent = totalAmount.toFixed(0);
+
+      const netDebts = { K: 0, C: 0 };
+      expenses.forEach(exp => {
+        if (exp.cleared) return;
+        const { payer, included, amount } = exp;
+        if (included.length === 2) {
+          const other = payer === "K" ? "C" : "K";
+          const share = amount / 2;
+          netDebts[other] += share;
+          netDebts[payer] -= share;
+        } else if (included[0] !== payer) {
+          const borrower = included[0];
+          netDebts[borrower] += amount;
+          netDebts[payer] -= amount;
+        }
+      });
+
+      debts.innerHTML = "";
+      let sumPositive = 0, sumNegative = 0;
+      Object.entries(netDebts).forEach(([person, value]) => {
+        const li = document.createElement("li");
+        li.textContent = `${person}: ¥${value.toFixed(0)}`;
+        debts.appendChild(li);
+        if (value > 0) sumPositive += value;
+        if (value < 0) sumNegative += value;
+      });
+
+      const settleAmount = sumPositive - Math.abs(sumNegative);
+      totalDebtSummary.textContent = `Total repayment needed: ¥${settleAmount.toFixed(0)} (= ¥${sumPositive.toFixed(0)} - ¥${Math.abs(sumNegative).toFixed(0)})`;
+
+      if (barChart) barChart.destroy();
+      barChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: [...Object.keys(netDebts), 'Total to Settle'],
+          datasets: [{
+            label: 'Debt Amount (¥)',
+            data: [...Object.values(netDebts), settleAmount],
+            backgroundColor: [...Object.values(netDebts).map(v => v >= 0 ? '#ff6384' : '#36a2eb'), '#888']
+          }]
+        },
+        options: {
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Debt Amount (¥)'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    render();
+  </script>
+</body>
+</html>
